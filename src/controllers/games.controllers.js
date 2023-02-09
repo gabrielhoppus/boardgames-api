@@ -1,6 +1,6 @@
 import { db } from "../config/database.connection.js";
 
-export async function getGames(req, res) {
+export async function getGames(res) {
     try {
         const games = await db.query("SELECT * FROM games")
 
@@ -22,7 +22,7 @@ export async function postGames(req, res) {
             return res.status(409).send("Game already exists");
         }
 
-        await db.query(`INSERT INTO games (name, image, stockTotal, pricePerDay) VALUES ($1, $2, $3, $4); RETURNING *`,
+        await db.query(`INSERT INTO games (name, image, "stockTotal", "pricePerDay") VALUES ($1, $2, $3, $4); RETURNING *`,
             [name, image, stockTotal, pricePerDay])
         res.status(201).send("Game added successfully");
     } catch (error) {
