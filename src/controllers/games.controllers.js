@@ -15,15 +15,16 @@ export async function getGames(req, res) {
 export async function postGames(req, res) {
     const { name, image, stockTotal, pricePerDay } = req.body;
 
-    const duplicate = await db.query(`SELECT * FROM games WHERE name = ${name}`)
-
-    if (duplicate) return res.sendsStatus(409);
-
     try {
-        await db.query(`INSERT INTO games (name, image, stockTotal, pricePerDay) VALUES ($1, $2, $3, $4);`,
+        const duplicate = await db.query(`SELECT * FROM games WHERE name = $1`, [name])
+
+        if (duplicate.rows.length > 0) {
+            return res.status(409).send("Game already exists");
+        }
+
+        await db.query(`INSERT INTO games (name, image, stockTotal, pricePerDay) VALUES ($1, $2, $3, $4); RETURNING *`,
             [name, image, stockTotal, pricePerDay])
-            .then(res.sendStatus(201))
-            .catch(() => { res.status(401).send("Erro ao executar requisição") })
+        res.status(201).send("Game added successfully");
     } catch (error) {
         res.status(500).send(error.message)
     }
