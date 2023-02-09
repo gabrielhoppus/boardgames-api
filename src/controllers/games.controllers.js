@@ -1,15 +1,16 @@
 import { db } from "../config/database.connection.js";
 
-export async function getGames(res) {
+export async function getGames(req, res) {
     try {
-        const games = await db.query("SELECT * FROM games;")
-            .then(res.status(200).send(games.rows))
-            .catch(() => { res.status(500).send("Erro ao executar requisição") })
+        const games = await db.query("SELECT * FROM games")
+
+        res.send(games.rows)
 
     } catch (error) {
-        res.status(500).send(error.message);
+        res.status(500).send(error.message)
     }
 }
+
 
 export async function postGames(req, res) {
     const { name, image, stockTotal, pricePerDay } = req.body;
@@ -22,7 +23,7 @@ export async function postGames(req, res) {
         await db.query(`INSERT INTO games (name, image, stockTotal, pricePerDay) VALUES ($1, $2, $3, $4);`,
             [name, image, stockTotal, pricePerDay])
             .then(res.sendStatus(201))
-            .catch(() => { res.status(500).send("Erro ao executar requisição") })
+            .catch(() => { res.status(401).send("Erro ao executar requisição") })
     } catch (error) {
         res.status(500).send(error.message)
     }
