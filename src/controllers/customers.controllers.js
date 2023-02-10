@@ -2,7 +2,7 @@ import { db } from "../config/database.connection.js";
 
 export async function getCustomers(_, res) {
     try {
-        const customers = await db.query("SELECT * FROM customers")
+        const customers = await db.query("SELECT * FROM customers ORDER BY id")
         res.send(customers.rows)
     } catch (error) {
         res.sendStatus(500);
@@ -14,10 +14,10 @@ export async function getCustomer(req, res) {
 
     try {
         const customer = await db.query("SELECT * FROM customers WHERE id = $1", [id])
-        if (!customer) {
-            res.sendStatus(404);
-        } else {
+        if (customer.rowCount) {
             res.send(customer.rows[0])
+        } else {
+            res.sendStatus(404);
         }
     } catch (error) {
         res.status(500).send(error.message);
@@ -48,7 +48,7 @@ export async function updateCustomer(req, res) {
     const { name, phone, cpf, birthday } = req.body;
 
     try {
-        const duplicate = await db.query(`SELECT * FROM customers WHERE cpf = $1 OFFSET $2`,
+        const duplicate = await db.query(`SELECT * FROM customers WHERE cpf = $1 AND id <> $2`,
             [cpf, id])
 
         if (duplicate.rowCount) {
