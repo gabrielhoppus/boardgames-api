@@ -48,7 +48,8 @@ export async function updateCustomer(req, res) {
     const { name, phone, cpf, birthday } = req.body;
 
     try {
-        const duplicate = await db.query(`SELECT * FROM customers WHERE cpf = $1`, [cpf])
+        const duplicate = await db.query(`SELECT * FROM customers WHERE cpf = $1 OFFSET $2`,
+            [cpf, id])
 
         if (duplicate.rowCount) {
             return res.status(409).send("Customer already exists");
