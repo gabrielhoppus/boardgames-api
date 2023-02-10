@@ -16,7 +16,7 @@ export async function postGames(req, res) {
     try {
         const duplicate = await db.query(`SELECT * FROM games WHERE name = $1`, [name])
 
-        if (duplicate.rows.length > 0) {
+        if (duplicate.rowCount) {
             return res.status(409).send("Game already exists");
         }
 
