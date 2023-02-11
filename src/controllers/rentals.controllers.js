@@ -4,24 +4,17 @@ import dayjs from "dayjs";
 export async function getRentals(_, res) {
     try {
         const rentals = await db.query(`
-            SELECT json_build_object (
-                'id', rentals.id,
-                'customerId', rentals."customerId",
-                'gameId', rentals."gameId",
-                'rentDate', rentals."rentDate",
-                'daysRented', rentals."daysRented",
-                'returnDate', rentals."returnDate",
-                'originalPrice', rentals."originalPrice",
-                'delayFee', rentals."delayFee",
-                'customer', json_build_object (
-                    'id', customers.id,
-                    'name', customers.name
-                ),
-                'game', json_build_object (
-                    'id', games.id,
-                    'name', games.name
-                )
-            ) FROM rentals JOIN customers ON rentals."customerId" = customers.id
+            SELECT rentals.*,
+            json_build_object (
+                'id', customers.id,
+                'name', customers.name
+            ) AS customer,
+            json_build_object (
+                'id', games.id,
+                'name', games.name
+            ) AS game
+            FROM rentals 
+            JOIN customers ON rentals."customerId" = customers.id
             JOIN games ON rentals."gameId" = games.id;`)
 
         res.send(rentals.rows)
@@ -43,6 +36,13 @@ export async function postRentals(req, res) {
         if (!customerDuplicate.rowCount || !gameDuplicate.rowCount) {
             return res.sendStatus(400);
         }
+
+        const stockCheck = await db.query(`SELECT "stockTotal" FROM games WHERE id = $1`, [gameId]);
+        const gameCheck = await db.query('SELECT * FROM rentals WHERE "gameId" = $1',[gameId])
+
+        if (stockCheck.rows[0].stockTotal <= gameCheck.rowCount) {
+			return res.status(400).send("Game is out of stock");
+		}
 
         const rentedGame = await db.query("SELECT * FROM games WHERE id = $1", [gameId]);
         const { pricePerDay } = rentedGame.rows[0]
