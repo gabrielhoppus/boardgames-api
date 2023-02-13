@@ -65,10 +65,6 @@ export async function closeRental(req, res) {
 
     try {
         const rental = await db.query("SELECT * FROM rentals WHERE id = $1", [id])
-        const gameId = rental.rows[0].gameId
-        const daysRented = rental.rows[0].daysRented
-        const initialDate = dayjs(rental.rows[0].rentDate)
-        const diff = returnDate.diff(initialDate, "day") > 2
 
         if (!rental.rowCount) {
             return res.status(404).send("Rental not found");
@@ -78,8 +74,14 @@ export async function closeRental(req, res) {
             return res.status(400).send("Rental already closed");
         }
 
-        if (diff) {
-            const delay = returnDate.diff(initialDate, "day") - daysRented
+        const gameId = rental.rows[0].gameId
+        const daysRented = rental.rows[0].daysRented
+        const initialDate = dayjs(rental.rows[0].rentDate)
+        const diff = returnDate.diff(initialDate, "day")
+        const diffComparison = diff > daysRented
+
+        if (diffComparison) {
+            const delay = diff - daysRented
             const game = await db.query("SELECT * FROM games WHERE id = $1", [gameId])
             const delayFee = game.rows[0].pricePerDay * delay
 
