@@ -38,11 +38,11 @@ export async function postRentals(req, res) {
         }
 
         const stockCheck = await db.query(`SELECT "stockTotal" FROM games WHERE id = $1`, [gameId]);
-        const gameCheck = await db.query('SELECT * FROM rentals WHERE "gameId" = $1',[gameId])
+        const gameCheck = await db.query('SELECT * FROM rentals WHERE "gameId" = $1', [gameId])
 
         if (stockCheck.rows[0].stockTotal <= gameCheck.rowCount) {
-			return res.status(400).send("Game is out of stock");
-		}
+            return res.status(400).send("Game is out of stock");
+        }
 
         const rentedGame = await db.query("SELECT * FROM games WHERE id = $1", [gameId]);
         const { pricePerDay } = rentedGame.rows[0]
@@ -59,22 +59,42 @@ export async function postRentals(req, res) {
     }
 }
 
-// export async function updateCustomer(req, res) {
-//     const { id } = req.params;
-//     const { name, phone, cpf, birthday } = req.body;
+export async function closeRental(req, res) {
+    const { id } = req.params;
+    const returnDate = dayjs(Date.now());
 
-//     try {
-//         const duplicate = await db.query(`SELECT * FROM customers WHERE cpf = $1 AND id <> $2`,
-//             [cpf, id])
+    try {
+        const rental = await db.query("SELECT * FROM rentals WHERE id = $1", [id])
+        const gameId = rental.rows[0].gameId
+        const daysRented = rental.rows[0].daysRented
+        const initialDate = dayjs(rental.rows[0].rentDate)
+        const diff = returnDate.diff(initialDate, "day") > 2
 
-//         if (duplicate.rowCount) {
-//             return res.status(409).send("Customer already exists");
-//         }
+        if (!rental.rowCount) {
+            return res.status(404).send("Rental not found");
+        }
 
-//         await db.query("UPDATE customers SET name=$1, phone=$2, cpf=$3, birthday=$4 WHERE id = $5",
-//             [name, phone, cpf, birthday, id])
-//         res.status(200).send("Customer updated successfully");
-//     } catch (error) {
-//         res.status(500).send(error.message)
-//     }
-// }
+        if (rental.rows[0].returnDate !== null) {
+            return res.status(400).send("Rental already closed");
+        }
+
+        if (diff) {
+            const delay = returnDate.diff(initialDate, "day") - daysRented
+            const game = await db.query("SELECT * FROM games WHERE id = $1", [gameId])
+            const delayFee = game.rows[0].pricePerDay * delay
+
+            await db.query(
+                `UPDATE rentals SET "returnDate" = $1, "delayFee" = $2 WHERE id = $3`,
+                [returnDate, delayFee, id])
+            res.sendStatus(200)
+        } else {
+            await db.query(
+                `UPDATE rentals SET "returnDate" = $1 WHERE id = $2`,
+                [returnDate, id])
+            res.sendStatus(200)
+        }
+
+    } catch (error) {
+        res.status(500).send(error.message)
+    }
+}
