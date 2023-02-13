@@ -70,7 +70,7 @@ export async function closeRental(req, res) {
             return res.status(404).send("Rental not found");
         }
 
-        if (rental.rows[0].returnDate === null) {
+        if (rental.rows[0].returnDate !== null) {
             return res.status(400).send("Rental still open");
         }
 
@@ -111,7 +111,7 @@ export async function deleteRental(req, res){
             return res.status(404).send("Rental not found");
         }
 
-        if (rental.rows[0].returnDate !== null) {
+        if (rental.rows[0].returnDate === null) {
             return res.status(400).send("Rental already closed");
         }
 
