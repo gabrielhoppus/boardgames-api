@@ -1,20 +1,8 @@
 import { db } from "../config/database.connection.js";
 
-function buildQuery(cpf, offset, limit, order, desc) {
-    let query = "SELECT * FROM customers";
-    query += cpf ? ` WHERE cpf ILIKE '${cpf}%'` : "";
-    query += offset ? ` OFFSET '${offset}'` : "";
-    query += limit ? ` LIMIT '${limit}'` : "";
-    query += order ? ` ORDER BY '${order}'` : "";
-    query += desc === "true" ? ` DESC` : "";
-    return query;
-}
-
-export async function getCustomers(req, res) {
+export async function getCustomers(_, res) {
     try {
-        const { cpf, offset, limit, order, desc } = req.query;
-        const query = buildQuery(cpf, offset, limit, order, desc);
-        const customers = await db.query(query)
+        const customers = await db.query("SELECT * FROM customers ORDER BY id")
         res.send(customers.rows)
     } catch (error) {
         res.sendStatus(500);

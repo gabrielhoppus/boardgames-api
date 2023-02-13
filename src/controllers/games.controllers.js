@@ -1,26 +1,14 @@
 import { db } from "../config/database.connection.js";
 
-function buildQuery(name, offset, limit, order, desc) {
-    let query = "SELECT * FROM customers";
-    query += name ? ` WHERE cpf ILIKE '${name}%'` : "";
-    query += offset ? ` OFFSET '${offset}'` : "";
-    query += limit ? ` LIMIT '${limit}'` : "";
-    query += order ? ` ORDER BY '${order}'` : "";
-    query += desc === "true" ? ` DESC` : "";
-    return query;
-}
-
-export async function getGames(_, res) {
-
+export async function getGames(_,res) {
     try {
-        const { name, offset, limit, order, desc } = req.query;
-        const query = buildQuery(name, offset, limit, order, desc);
-        const games = await db.query(query)
+        const games = await db.query("SELECT * FROM games")
         res.send(games.rows)
-    } catch {
+    } catch (error) {
         res.sendStatus(500);
     }
 }
+
 
 export async function postGames(req, res) {
     const { name, image, stockTotal, pricePerDay } = req.body;
