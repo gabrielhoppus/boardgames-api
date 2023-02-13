@@ -70,8 +70,8 @@ export async function closeRental(req, res) {
             return res.status(404).send("Rental not found");
         }
 
-        if (rental.rows[0].returnDate !== null) {
-            return res.status(400).send("Rental already closed");
+        if (rental.rows[0].returnDate === null) {
+            return res.status(400).send("Rental still open");
         }
 
         const gameId = rental.rows[0].gameId
