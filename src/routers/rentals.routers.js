@@ -12,7 +12,7 @@ const rentalRouter = Router();
 
 rentalRouter.get("/rentals", getRentals);
 rentalRouter.post("/rentals", validateSchema(rentalSchema), postRentals);
-rentalRouter.post("/rentals/:id", closeRental);
+rentalRouter.post("/rentals/:id/return", closeRental);
 rentalRouter.delete("/rentals/:id", deleteRental)
 
 
