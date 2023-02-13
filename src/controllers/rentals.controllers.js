@@ -100,3 +100,25 @@ export async function closeRental(req, res) {
         res.status(500).send(error.message)
     }
 }
+
+export async function deleteRental(req, res){
+    const { id } = req.params;
+
+    try {
+        const rental = await db.query("SELECT * FROM rentals WHERE id = $1", [id])
+
+        if (!rental.rowCount) {
+            return res.status(404).send("Rental not found");
+        }
+
+        if (rental.rows[0].returnDate !== null) {
+            return res.status(400).send("Rental already closed");
+        }
+
+        await db.query(`DELETE FROM rentals WHERE id = $1`, [id])
+        res.sendStatus(200)
+    } catch {
+        res.status(500).send(error.message)
+    }
+
+}
