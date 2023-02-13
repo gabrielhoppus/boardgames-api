@@ -1,22 +1,78 @@
 import { db } from "../config/database.connection.js";
 import dayjs from "dayjs";
 
+function buildQuery(
+    customerId,
+    gameId,
+    offset,
+    limit,
+    order,
+    desc,
+    status,
+    startDate
+){
+    let query = `
+    SELECT rentals.*,
+    json_build_object (
+        'id', customers.id,
+        'name', customers.name
+    ) AS customer,
+    json_build_object (
+        'id', games.id,
+        'name', games.name
+    ) AS game
+    FROM rentals 
+    JOIN customers ON rentals."customerId" = customers.id
+    JOIN games ON rentals."gameId" = games.id;`
+
+    const where = [
+        customerId ? `customers.id = '${customerId}'` : null,
+		gameId ? `games.id = '${gameId}'` : null,
+		status
+			? `rentals."returnDate" IS ${status === "closed" ? "NOT" : ""} NULL`
+			: null,
+		startDate ? `rentals."rentDate" >= '${startDate}'` : null,
+	]
+		.filter(Boolean)
+		.join(" AND ");
+
+    if (where) {
+        query += `WHERE ${where}`
+    }
+    
+    query += offset ? ` OFFSET '${offset}'` : "";
+    query += limit ? ` LIMIT '${limit}'` : "";
+    query += order ? ` ORDER BY '${order}'` : "";
+    query += desc === "true" ? ` DESC` : "";
+
+    return query
+}
+
 export async function getRentals(_, res) {
     try {
-        const rentals = await db.query(`
-            SELECT rentals.*,
-            json_build_object (
-                'id', customers.id,
-                'name', customers.name
-            ) AS customer,
-            json_build_object (
-                'id', games.id,
-                'name', games.name
-            ) AS game
-            FROM rentals 
-            JOIN customers ON rentals."customerId" = customers.id
-            JOIN games ON rentals."gameId" = games.id;`)
+        const {
+			customerId,
+			gameId,
+			offset,
+			limit,
+			order,
+			desc,
+			status,
+			startDate,
+		} = req.query;
 
+        const query = buildQuery(
+			customerId,
+			gameId,
+			offset,
+			limit,
+			order,
+			desc,
+			status,
+			startDate
+		);
+
+        const rentals = await db.query(query)
         res.send(rentals.rows)
     } catch (error) {
         res.sendStatus(500);
@@ -101,7 +157,7 @@ export async function closeRental(req, res) {
     }
 }
 
-export async function deleteRental(req, res){
+export async function deleteRental(req, res) {
     const { id } = req.params;
 
     try {
